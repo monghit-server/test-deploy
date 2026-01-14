@@ -1,4 +1,5 @@
 const express = require('express');
+const { version, name } = require('./package.json');
 const app = express();
 const PORT = 3000;
 
@@ -10,7 +11,11 @@ app.get('/', (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
+  res.json({
+    status: 'ok',
+    app: name,
+    version: version
+  });
 });
 
 app.listen(PORT, () => {
