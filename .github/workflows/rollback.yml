@@ -81,6 +81,11 @@ jobs:
                   echo "✅ Desplegada versión ${{ inputs.version }}"
                   echo "$RESPONSE"
                   exit 0
+                elif [ -z "$DEPLOYED_VERSION" ]; then
+                  echo "⚠️ Versión antigua sin info de versión en /health"
+                  echo "✅ Health check OK - imagen ${{ inputs.version }} desplegada"
+                  echo "$RESPONSE"
+                  exit 0
                 else
                   echo "⚠️ Versión desplegada ($DEPLOYED_VERSION) no coincide con la solicitada (${{ inputs.version }})"
                 fi
