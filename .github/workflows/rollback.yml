@@ -58,4 +58,29 @@ jobs:
             sed -i 's|image: ghcr.io/monghit-server/test-deploy:.*|image: ghcr.io/monghit-server/test-deploy:${{ inputs.version }}|' docker-compose.yml
             docker compose pull
             docker compose up -d
-            echo "✅ Desplegada versión ${{ inputs.version }}"
+
+            echo "⏳ Esperando que el contenedor arranque..."
+            sleep 5
+
+            if ! docker compose ps | grep -q "running"; then
+              echo "❌ Error: El contenedor no está corriendo"
+              echo "📋 Logs del contenedor:"
+              docker compose logs --tail=50
+              exit 1
+            fi
+
+            echo "⏳ Verificando health check..."
+            for i in 1 2 3 4 5; do
+              if curl -sf http://localhost:3000/health > /dev/null 2>&1; then
+                echo "✅ Desplegada versión ${{ inputs.version }}"
+                curl -s http://localhost:3000/health
+                exit 0
+              fi
+              echo "Intento $i/5 fallido, reintentando..."
+              sleep 3
+            done
+
+            echo "❌ Error: Health check falló después de 5 intentos"
+            echo "📋 Logs del contenedor:"
+            docker compose logs --tail=50
+            exit 1
