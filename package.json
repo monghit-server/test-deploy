@@ -1,6 +1,6 @@
 {
   "name": "test-deploy",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Test deploy app",
   "main": "index.js",
   "scripts": {
