@@ -119,6 +119,7 @@ jobs:
             fi
             cd test-deploy
             git fetch --all --tags
+            git checkout -- docker-compose.yml
             git checkout main
             git pull
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
