@@ -24,7 +24,7 @@ jobs:
               cd test-deploy
               git pull
             else
-              git clone git@github.com:monghit-server/test-deploy.git
+              git clone https://github.com/monghit-server/test-deploy.git
               cd test-deploy
             fi
             docker compose down
