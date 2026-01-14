@@ -55,28 +55,40 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /opt/apps/test-deploy
+
+            echo "📋 Cambiando imagen a versión ${{ inputs.version }}..."
             sed -i 's|image: ghcr.io/monghit-server/test-deploy:.*|image: ghcr.io/monghit-server/test-deploy:${{ inputs.version }}|' docker-compose.yml
+
+            echo "📋 docker-compose.yml actualizado:"
+            grep "image:" docker-compose.yml
+
             docker compose pull
-            docker compose up -d
+            docker compose up -d --force-recreate
 
             echo "⏳ Esperando que el contenedor arranque..."
-            sleep 5
+            sleep 10
 
             echo "📋 Estado del contenedor:"
             docker compose ps
 
             echo "⏳ Verificando health check..."
             for i in 1 2 3 4 5 6 7 8 9 10; do
-              if curl -sf https://test.monghit.com/health > /dev/null 2>&1; then
-                echo "✅ Desplegada versión ${{ inputs.version }}"
-                curl -s https://test.monghit.com/health
-                exit 0
+              RESPONSE=$(curl -sf https://test.monghit.com/health 2>/dev/null)
+              if [ -n "$RESPONSE" ]; then
+                DEPLOYED_VERSION=$(echo "$RESPONSE" | grep -o '"version":"[^"]*"' | cut -d'"' -f4)
+                if [ "$DEPLOYED_VERSION" = "${{ inputs.version }}" ]; then
+                  echo "✅ Desplegada versión ${{ inputs.version }}"
+                  echo "$RESPONSE"
+                  exit 0
+                else
+                  echo "⚠️ Versión desplegada ($DEPLOYED_VERSION) no coincide con la solicitada (${{ inputs.version }})"
+                fi
               fi
               echo "Intento $i/10 fallido, reintentando..."
               sleep 3
             done
 
-            echo "❌ Error: Health check falló después de 10 intentos"
+            echo "❌ Error: No se pudo verificar la versión ${{ inputs.version }}"
             echo "📋 Logs del contenedor:"
             docker compose logs --tail=50
             exit 1
