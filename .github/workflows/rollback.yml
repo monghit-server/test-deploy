@@ -4,24 +4,48 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Versión a desplegar (ej: 1.0.0, 1.0.1)'
-        required: true
+        description: 'Versión a desplegar (ej: 1.0.0, 1.0.1) - deja vacío para ver tags disponibles'
+        required: false
         type: string
 
 jobs:
   rollback:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: List available tags
+        id: tags
+        run: |
+          echo "📋 Tags disponibles:"
+          git tag -l "v*" --sort=-version:refname | head -20
+          echo ""
+          TAGS=$(git tag -l "v*" --sort=-version:refname | tr '\n' ', ' | sed 's/,$//')
+          echo "tags=$TAGS" >> $GITHUB_OUTPUT
+
+      - name: Check if version provided
+        if: inputs.version == ''
+        run: |
+          echo "ℹ️ No se especificó versión."
+          echo ""
+          echo "📋 Tags disponibles: ${{ steps.tags.outputs.tags }}"
+          echo ""
+          echo "Ejecuta el workflow de nuevo y especifica una versión."
+          exit 1
+
       - name: Validate version exists
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            "https://ghcr.io/v2/monghit-server/test-deploy/manifests/${{ inputs.version }}")
-          if [ "$STATUS" != "200" ]; then
-            echo "❌ Error: La versión ${{ inputs.version }} no existe en el registro"
+          VERSION="v${{ inputs.version }}"
+          if ! git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "❌ Error: El tag $VERSION no existe"
+            echo ""
+            echo "📋 Tags disponibles: ${{ steps.tags.outputs.tags }}"
             exit 1
           fi
-          echo "✅ Versión ${{ inputs.version }} encontrada"
+          echo "✅ Tag $VERSION encontrado"
 
       - name: Deploy version to server
         uses: appleboy/ssh-action@v1.0.3
