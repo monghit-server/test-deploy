@@ -1,6 +1,6 @@
 services:
   app:
-    build: .
+    image: ghcr.io/monghit-server/test-deploy:main
     restart: always
     labels:
       - "traefik.enable=true"
