@@ -1,0 +1,76 @@
+name: Validate Version
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Get PR version
+        id: pr_version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Checkout main branch
+        uses: actions/checkout@v4.1.1
+        with:
+          ref: main
+          path: main-branch
+
+      - name: Get main version
+        id: main_version
+        run: echo "version=$(node -p "require('./main-branch/package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Check if tag already exists
+        id: check_tag
+        run: |
+          git fetch --tags
+          if git rev-parse "v${{ steps.pr_version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Validate version
+        run: |
+          echo "PR version: ${{ steps.pr_version.outputs.version }}"
+          echo "Main version: ${{ steps.main_version.outputs.version }}"
+          echo "Tag exists: ${{ steps.check_tag.outputs.exists }}"
+
+          if [ "${{ steps.check_tag.outputs.exists }}" == "true" ]; then
+            echo "❌ Error: El tag v${{ steps.pr_version.outputs.version }} ya existe"
+            echo "Usa una versión diferente en package.json"
+            exit 1
+          fi
+
+          if [ "${{ steps.pr_version.outputs.version }}" == "${{ steps.main_version.outputs.version }}" ]; then
+            echo "❌ Error: La versión debe ser diferente a main"
+            echo "Actualiza la versión en package.json antes de hacer merge"
+            exit 1
+          fi
+
+          echo "✅ Versión válida: v${{ steps.pr_version.outputs.version }}"
+
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4.0.2
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run npm audit
+        run: npm audit --audit-level=high
