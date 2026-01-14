@@ -62,12 +62,8 @@ jobs:
             echo "⏳ Esperando que el contenedor arranque..."
             sleep 5
 
-            if ! docker compose ps | grep -q "running"; then
-              echo "❌ Error: El contenedor no está corriendo"
-              echo "📋 Logs del contenedor:"
-              docker compose logs --tail=50
-              exit 1
-            fi
+            echo "📋 Estado del contenedor:"
+            docker compose ps
 
             echo "⏳ Verificando health check..."
             for i in 1 2 3 4 5; do
