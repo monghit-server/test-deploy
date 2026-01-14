@@ -1,6 +1,16 @@
 services:
   app:
     build: .
-    ports:
-      - "3000:3000"
     restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.test-deploy.rule=Host(`test.monghit.com`)"
+      - "traefik.http.routers.test-deploy.entrypoints=websecure"
+      - "traefik.http.routers.test-deploy.tls.certresolver=letsencrypt"
+      - "traefik.http.services.test-deploy.loadbalancer.server.port=3000"
+    networks:
+      - traefik-net
+
+networks:
+  traefik-net:
+    external: true
