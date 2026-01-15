@@ -58,6 +58,13 @@ jobs:
 
           echo "✅ Versión válida: v${{ steps.pr_version.outputs.version }}"
 
+      - name: Notify Telegram on failure
+        if: failure()
+        run: |
+          curl -X POST "${{ secrets.TELEGRAM_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{"event": "version_check_failed", "repository": "${{ github.repository }}", "pr_number": "${{ github.event.pull_request.number }}", "pr_title": "${{ github.event.pull_request.title }}", "version": "${{ steps.pr_version.outputs.version }}", "actor": "${{ github.actor }}", "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}'
+
   security-audit:
     runs-on: ubuntu-latest
     steps:
@@ -74,3 +81,10 @@ jobs:
 
       - name: Run npm audit
         run: npm audit --audit-level=high
+
+      - name: Notify Telegram on failure
+        if: failure()
+        run: |
+          curl -X POST "${{ secrets.TELEGRAM_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{"event": "security_audit_failed", "repository": "${{ github.repository }}", "pr_number": "${{ github.event.pull_request.number }}", "pr_title": "${{ github.event.pull_request.title }}", "actor": "${{ github.actor }}", "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}'
