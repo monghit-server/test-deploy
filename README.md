@@ -288,8 +288,10 @@ test-deploy/
 Se ejecuta en push a main:
 
 1. **create-tag**: Crea tag automatico basado en `package.json`
-2. **build-and-push**: Construye y sube imagen a ghcr.io
-3. **deploy**: Despliega en el servidor via SSH
+2. **build-and-push**: Construye y sube imagen a ghcr.io (exporta la version como output)
+3. **deploy**: Despliega en el servidor via SSH usando el tag de version especifico
+
+El deploy actualiza el `docker-compose.yml` en el servidor para usar el tag de version (ej: `:1.1.5`) en lugar de `:main`. Esto evita acumular imagenes sin tag (dangling) en el servidor.
 
 Cada job envia una notificacion a Telegram si falla.
 
@@ -336,8 +338,14 @@ Cada build crea tres tags en ghcr.io:
 
 ### Gestion de Imagenes
 
-Las imagenes se almacenan en ghcr.io y se descargan al servidor en cada deploy. Para limpiar imagenes locales no utilizadas:
+Las imagenes se almacenan en ghcr.io y se descargan al servidor en cada deploy.
 
+**Tags de version en el servidor:**
+El deploy actualiza automaticamente el `docker-compose.yml` del servidor para usar el tag de version especifico (ej: `:1.1.5`). Esto tiene dos ventajas:
+- Evita acumular imagenes sin tag (dangling) que ocupan espacio
+- Permite saber exactamente que version esta corriendo en el servidor
+
+**Limpieza manual (si es necesario):**
 ```bash
 # Eliminar imagenes sin tag (dangling)
 docker image prune -f
