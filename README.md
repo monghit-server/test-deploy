@@ -22,6 +22,8 @@ A lo largo del desarrollo se encontraron multiples problemas que fueron resuelto
 - Encadenar jobs con dependencias (`needs`)
 - Usar condicionales (`if`) para controlar ejecucion
 - Pasar datos entre steps con `$GITHUB_OUTPUT`
+- Crear **Composite Actions** para reutilizar codigo entre workflows
+- Integrar notificaciones a Telegram via webhooks de n8n
 
 ### Docker y Container Registry
 - Construir imagenes Docker optimizadas (Alpine, multi-stage)
@@ -257,6 +259,9 @@ docker compose ps  # Solo informativo
 ```
 test-deploy/
 ├── .github/
+│   ├── actions/
+│   │   └── notify-telegram/
+│   │       └── action.yml       # Composite action para notificaciones
 │   └── workflows/
 │       ├── deploy.yml           # Deploy automatico en push a main
 │       ├── rollback.yml         # Rollback manual a version especifica
@@ -379,6 +384,27 @@ git push origin main
 ## Notificaciones
 
 Las notificaciones se envian a un webhook de n8n que las redirige a Telegram. Se activan cuando falla cualquier paso de los workflows.
+
+### Composite Action
+
+Las notificaciones estan centralizadas en una **Composite Action** reutilizable ubicada en `.github/actions/notify-telegram/`. Esto permite:
+
+- Mantener la logica de notificacion en un solo lugar
+- Reutilizar el mismo codigo en todos los workflows
+- Facilitar cambios futuros (solo se modifica un archivo)
+
+**Uso en workflows:**
+```yaml
+- name: Notify Telegram on failure
+  if: failure()
+  uses: ./.github/actions/notify-telegram
+  with:
+    webhook_url: ${{ secrets.TELEGRAM_WEBHOOK_URL }}
+    event: deploy_failed
+    repository: ${{ github.repository }}
+    actor: ${{ github.actor }}
+    run_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+```
 
 ### Eventos
 
