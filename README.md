@@ -399,7 +399,7 @@ Las notificaciones estan centralizadas en una **Composite Action** reutilizable 
   if: failure()
   uses: ./.github/actions/notify-telegram
   with:
-    webhook_url: ${{ secrets.TELEGRAM_WEBHOOK_URL }}
+    webhook_url: ${{ secrets.N8N_WEBHOOK_TO_TELEGRAM_URL }}
     event: deploy_failed
     repository: ${{ github.repository }}
     actor: ${{ github.actor }}
@@ -440,7 +440,29 @@ Las notificaciones estan centralizadas en una **Composite Action** reutilizable 
 | `SERVER_HOST` | IP o dominio del servidor |
 | `SERVER_USER` | Usuario SSH |
 | `SSH_PRIVATE_KEY` | Llave privada SSH |
-| `TELEGRAM_WEBHOOK_URL` | URL del webhook de n8n para notificaciones a Telegram |
+| `N8N_WEBHOOK_TO_TELEGRAM_URL` | URL del webhook de n8n para notificaciones a Telegram |
+
+### Como configurar secrets en GitHub
+
+1. Ir al repositorio en GitHub
+2. Click en **Settings** (pestaña superior)
+3. En el menu lateral, ir a **Secrets and variables** > **Actions**
+4. Click en **New repository secret**
+5. Ingresar el nombre del secret (ej: `SERVER_HOST`) y su valor
+6. Click en **Add secret**
+
+**Ejemplo para SSH_PRIVATE_KEY:**
+```bash
+# Copiar el contenido de la llave privada
+cat ~/.ssh/id_ed25519
+```
+Pegar el contenido completo incluyendo `-----BEGIN OPENSSH PRIVATE KEY-----` y `-----END OPENSSH PRIVATE KEY-----`.
+
+**Ejemplo para N8N_WEBHOOK_TO_TELEGRAM_URL:**
+```
+https://tu-instancia-n8n.com/webhook/xxx-xxx-xxx
+```
+Esta URL se obtiene del nodo Webhook en tu workflow de n8n que envia mensajes a Telegram.
 
 ### Proteccion de rama
 

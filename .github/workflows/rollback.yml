@@ -103,7 +103,7 @@ jobs:
         if: failure()
         uses: ./.github/actions/notify-telegram
         with:
-          webhook_url: ${{ secrets.TELEGRAM_WEBHOOK_URL }}
+          webhook_url: ${{ secrets.N8N_WEBHOOK_TO_TELEGRAM_URL }}
           event: rollback_failed
           repository: ${{ github.repository }}
           actor: ${{ github.actor }}
