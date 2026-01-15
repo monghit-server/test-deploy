@@ -317,6 +317,8 @@ Se ejecuta en PRs a main:
 1. **check-version**: Valida que la version sea diferente y el tag no exista
 2. **security-audit**: Ejecuta `npm audit`
 
+Cada job envia notificacion a Telegram si falla.
+
 ## Imagenes Docker
 
 Cada build crea tres tags en ghcr.io:
@@ -386,6 +388,8 @@ Las notificaciones se envian a un webhook de n8n que las redirige a Telegram. Se
 | `build_failed` | deploy.yml | Fallo al construir o subir la imagen Docker |
 | `deploy_failed` | deploy.yml | Fallo al desplegar en el servidor |
 | `rollback_failed` | rollback.yml | Fallo en cualquier paso del rollback |
+| `version_check_failed` | validate-version.yml | Version invalida o tag ya existe |
+| `security_audit_failed` | validate-version.yml | Vulnerabilidades encontradas en npm audit |
 
 ### Formato del webhook
 
