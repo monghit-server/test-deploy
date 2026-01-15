@@ -68,6 +68,8 @@ jobs:
       contents: read
       packages: write
       security-events: write
+    outputs:
+      version: ${{ steps.pkg_version.outputs.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.1
@@ -142,6 +144,10 @@ jobs:
             git checkout -- docker-compose.yml
             git checkout main
             git pull
+
+            echo "📋 Actualizando imagen a versión ${{ needs.build-and-push.outputs.version }}..."
+            sed -i 's|image: ghcr.io/monghit-server/test-deploy:.*|image: ghcr.io/monghit-server/test-deploy:${{ needs.build-and-push.outputs.version }}|' docker-compose.yml
+
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker compose pull
             docker compose up -d
