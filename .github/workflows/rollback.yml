@@ -101,7 +101,11 @@ jobs:
 
       - name: Notify Telegram on failure
         if: failure()
-        run: |
-          curl -k -X POST "${{ secrets.TELEGRAM_WEBHOOK_URL }}" \
-            -H "Content-Type: application/json" \
-            -d '{"event": "rollback_failed", "repository": "${{ github.repository }}", "version": "${{ inputs.version }}", "actor": "${{ github.actor }}", "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}'
+        uses: ./.github/actions/notify-telegram
+        with:
+          webhook_url: ${{ secrets.TELEGRAM_WEBHOOK_URL }}
+          event: rollback_failed
+          repository: ${{ github.repository }}
+          actor: ${{ github.actor }}
+          run_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          version: ${{ inputs.version }}
