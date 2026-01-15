@@ -49,6 +49,13 @@ jobs:
           git push origin "v${{ steps.get_version.outputs.version }}"
           echo "created=true" >> $GITHUB_OUTPUT
 
+      - name: Notify Telegram on failure
+        if: failure()
+        run: |
+          curl -X POST "${{ secrets.TELEGRAM_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{"event": "create_tag_failed", "repository": "${{ github.repository }}", "version": "${{ steps.get_version.outputs.version }}", "actor": "${{ github.actor }}", "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}'
+
   build-and-push:
     runs-on: ubuntu-latest
     needs: create-tag
@@ -96,6 +103,13 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
 
+      - name: Notify Telegram on failure
+        if: failure()
+        run: |
+          curl -X POST "${{ secrets.TELEGRAM_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{"event": "build_failed", "repository": "${{ github.repository }}", "version": "${{ steps.pkg_version.outputs.version }}", "actor": "${{ github.actor }}", "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}'
+
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
@@ -142,3 +156,10 @@ jobs:
             echo "📋 Logs del contenedor:"
             docker compose logs --tail=50
             exit 1
+
+      - name: Notify Telegram on failure
+        if: failure()
+        run: |
+          curl -X POST "${{ secrets.TELEGRAM_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{"event": "deploy_failed", "repository": "${{ github.repository }}", "branch": "${{ github.ref_name }}", "commit": "${{ github.sha }}", "actor": "${{ github.actor }}", "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}'

@@ -98,3 +98,10 @@ jobs:
             echo "📋 Logs del contenedor:"
             docker compose logs --tail=50
             exit 1
+
+      - name: Notify Telegram on failure
+        if: failure()
+        run: |
+          curl -X POST "${{ secrets.TELEGRAM_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{"event": "rollback_failed", "repository": "${{ github.repository }}", "version": "${{ inputs.version }}", "actor": "${{ github.actor }}", "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}'
