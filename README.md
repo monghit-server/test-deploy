@@ -10,6 +10,7 @@ El objetivo fue construir desde cero un sistema que permita:
 - Realizar rollbacks a versiones anteriores
 - Validar cambios antes de mergear a main
 - Aplicar buenas practicas de seguridad
+- Recibir notificaciones en Telegram cuando hay fallos
 
 A lo largo del desarrollo se encontraron multiples problemas que fueron resueltos iterativamente, documentados en la seccion [Problemas Resueltos](#problemas-resueltos).
 
@@ -285,12 +286,17 @@ Se ejecuta en push a main:
 2. **build-and-push**: Construye y sube imagen a ghcr.io
 3. **deploy**: Despliega en el servidor via SSH
 
+Cada job envia una notificacion a Telegram si falla.
+
 ```mermaid
 graph LR
     A[Push a main] --> B[create-tag]
     B --> C[build-and-push]
     C --> D[deploy]
     D --> E[Health check]
+    B -.->|fallo| T[Telegram]
+    C -.->|fallo| T
+    D -.->|fallo| T
 ```
 
 ### Rollback (rollback.yml)
@@ -301,6 +307,8 @@ Se ejecuta manualmente desde GitHub Actions:
 2. Valida que el tag exista
 3. Cambia imagen en el servidor
 4. Verifica health check
+
+Envia notificacion a Telegram si falla cualquier paso.
 
 ### Validate Version (validate-version.yml)
 
@@ -366,6 +374,33 @@ git push origin main
 
 - [GitHub Packages](../../pkgs/container/test-deploy)
 
+## Notificaciones
+
+Las notificaciones se envian a un webhook de n8n que las redirige a Telegram. Se activan cuando falla cualquier paso de los workflows.
+
+### Eventos
+
+| Evento | Workflow | Descripcion |
+|--------|----------|-------------|
+| `create_tag_failed` | deploy.yml | Fallo al crear el tag de version |
+| `build_failed` | deploy.yml | Fallo al construir o subir la imagen Docker |
+| `deploy_failed` | deploy.yml | Fallo al desplegar en el servidor |
+| `rollback_failed` | rollback.yml | Fallo en cualquier paso del rollback |
+
+### Formato del webhook
+
+```json
+{
+  "event": "deploy_failed",
+  "repository": "user/repo",
+  "branch": "main",
+  "commit": "abc123...",
+  "version": "1.0.0",
+  "actor": "username",
+  "run_url": "https://github.com/user/repo/actions/runs/123"
+}
+```
+
 ## Configuracion
 
 ### Secrets requeridos
@@ -375,6 +410,7 @@ git push origin main
 | `SERVER_HOST` | IP o dominio del servidor |
 | `SERVER_USER` | Usuario SSH |
 | `SSH_PRIVATE_KEY` | Llave privada SSH |
+| `TELEGRAM_WEBHOOK_URL` | URL del webhook de n8n para notificaciones a Telegram |
 
 ### Proteccion de rama
 
