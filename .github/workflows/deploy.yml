@@ -45,7 +45,7 @@ jobs:
   # Build usando workflow centralizado
   build:
     needs: create-tag
-    uses: monghit-server/.github/workflows/docker-build.yml@main
+    uses: monghit-server/.github/.github/workflows/docker-build.yml@main
     with:
       image_name: ${{ github.repository }}
     secrets:
@@ -54,7 +54,7 @@ jobs:
   # Deploy usando workflow centralizado
   deploy:
     needs: [create-tag, build]
-    uses: monghit-server/.github/workflows/deploy.yml@main
+    uses: monghit-server/.github/.github/workflows/deploy.yml@main
     with:
       app_name: test-deploy
       app_path: /opt/apps/test-deploy

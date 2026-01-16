@@ -7,6 +7,6 @@ on:
 
 jobs:
   validate:
-    uses: monghit-server/.github/workflows/validate-pr.yml@main
+    uses: monghit-server/.github/.github/workflows/validate-pr.yml@main
     secrets:
       N8N_WEBHOOK_TO_TELEGRAM_URL: ${{ secrets.N8N_WEBHOOK_TO_TELEGRAM_URL }}
