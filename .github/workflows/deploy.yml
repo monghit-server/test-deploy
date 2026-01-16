@@ -48,8 +48,6 @@ jobs:
     uses: monghit-server/.github/.github/workflows/docker-build.yml@main
     with:
       image_name: ${{ github.repository }}
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Deploy usando workflow centralizado
   deploy:
@@ -64,5 +62,4 @@ jobs:
       SERVER_HOST: ${{ secrets.SERVER_HOST }}
       SERVER_USER: ${{ secrets.SERVER_USER }}
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       N8N_WEBHOOK_TO_TELEGRAM_URL: ${{ secrets.N8N_WEBHOOK_TO_TELEGRAM_URL }}
