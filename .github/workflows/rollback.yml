@@ -101,7 +101,7 @@ jobs:
 
       - name: Notify Telegram on failure
         if: failure()
-        uses: ./.github/actions/notify-telegram
+        uses: monghit-server/.github/actions/notify-telegram@main
         with:
           webhook_url: ${{ secrets.N8N_WEBHOOK_TO_TELEGRAM_URL }}
           event: rollback_failed
