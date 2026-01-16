@@ -78,6 +78,25 @@ jobs:
         id: pkg_version
         run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
+      - name: Generate git-info.json
+        run: |
+          cat > git-info.json << EOF
+          {
+            "commit": {
+              "hash": "${{ github.sha }}",
+              "shortHash": "$(echo ${{ github.sha }} | cut -c1-7)",
+              "message": $(git log -1 --pretty=format:'"%s"'),
+              "author": {
+                "name": "$(git log -1 --pretty=format:'%an')",
+                "email": "$(git log -1 --pretty=format:'%ae')"
+              },
+              "date": "$(git log -1 --pretty=format:'%ci')"
+            },
+            "branch": "${{ github.ref_name }}"
+          }
+          EOF
+          cat git-info.json
+
       - name: Log in to Container Registry
         uses: docker/login-action@v3.1.0
         with:

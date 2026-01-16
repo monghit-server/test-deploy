@@ -15,6 +15,17 @@ const startTime = Date.now();
 // ============================================
 
 function getGitInfo() {
+  // Primero intentar leer git-info.json (generado en CI/CD)
+  const gitInfoPath = path.join(process.cwd(), 'git-info.json');
+  if (fs.existsSync(gitInfoPath)) {
+    try {
+      return JSON.parse(fs.readFileSync(gitInfoPath, 'utf8'));
+    } catch (e) {
+      // Si falla, continuar con git commands
+    }
+  }
+
+  // Fallback: intentar obtener info de git en tiempo real
   try {
     const commitHash = execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
     const commitShort = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
