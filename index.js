@@ -15,6 +15,17 @@ const startTime = Date.now();
 // ============================================
 
 function getGitInfo() {
+  // Primero intentar leer git-info.json (generado en CI/CD)
+  const gitInfoPath = path.join(process.cwd(), 'git-info.json');
+  if (fs.existsSync(gitInfoPath)) {
+    try {
+      return JSON.parse(fs.readFileSync(gitInfoPath, 'utf8'));
+    } catch (e) {
+      // Si falla, continuar con git commands
+    }
+  }
+
+  // Fallback: intentar obtener info de git en tiempo real
   try {
     const commitHash = execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
     const commitShort = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
@@ -331,6 +342,327 @@ app.get('/actuator/env', (req, res) => {
       }
     ]
   });
+});
+
+// ============================================
+// DASHBOARD - Infografia visual del proyecto
+// ============================================
+
+app.get('/dashboard', async (req, res) => {
+  const gitInfo = getGitInfo();
+  const memoryUsage = process.memoryUsage();
+  const files = getMarkdownFiles();
+  const uptimeSeconds = process.uptime();
+
+  // Construir HTML de git info
+  let gitHtml = '<p style="color: #888;">Info de git no disponible</p>';
+  if (gitInfo.commit) {
+    const shortHash = gitInfo.commit.shortHash || (gitInfo.commit.hash ? gitInfo.commit.hash.substring(0,7) : 'N/A');
+    const branch = gitInfo.branch || 'main';
+    const message = gitInfo.commit.message || 'No message';
+    const authorName = gitInfo.commit.author?.name || 'Unknown';
+    const commitDate = gitInfo.commit.date || 'Unknown date';
+    gitHtml = `
+      <span class="commit-hash">${shortHash}</span>
+      <span style="margin-left: 10px; color: #888;">${branch}</span>
+      <div class="commit-message">${message}</div>
+      <div class="meta">por ${authorName} • ${commitDate}</div>
+    `;
+  }
+
+  // Construir HTML de documentos
+  const docsHtml = files.map(f => `
+    <a href="${f.path}" class="doc-item">
+      <div class="icon">📄</div>
+      <div class="name">${f.name}</div>
+    </a>
+  `).join('');
+
+  const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - ${name}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      color: #fff;
+      padding: 20px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    /* Header */
+    .header {
+      text-align: center;
+      padding: 40px 20px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px;
+      margin-bottom: 30px;
+      backdrop-filter: blur(10px);
+    }
+    .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+    .header .version {
+      display: inline-block;
+      background: #0066cc;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 0.9em;
+    }
+    .header .description { color: #aaa; margin-top: 15px; }
+
+    /* Grid */
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; margin-bottom: 30px; }
+
+    /* Cards */
+    .card {
+      background: rgba(255,255,255,0.08);
+      border-radius: 15px;
+      padding: 25px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .card h2 {
+      font-size: 1.1em;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card h2::before {
+      content: '';
+      width: 4px;
+      height: 20px;
+      background: #0066cc;
+      border-radius: 2px;
+    }
+
+    /* Status */
+    .status-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+    .status-item {
+      background: rgba(0,0,0,0.2);
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    .status-item .value { font-size: 1.8em; font-weight: bold; color: #4ade80; }
+    .status-item .label { font-size: 0.8em; color: #888; margin-top: 5px; }
+    .status-item.warning .value { color: #fbbf24; }
+
+    /* Git Info */
+    .git-info { background: rgba(0,0,0,0.2); padding: 20px; border-radius: 10px; }
+    .git-info .commit-hash {
+      font-family: monospace;
+      background: #0066cc;
+      padding: 3px 10px;
+      border-radius: 5px;
+      font-size: 0.85em;
+    }
+    .git-info .commit-message {
+      margin-top: 15px;
+      padding: 15px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      border-left: 3px solid #0066cc;
+      font-style: italic;
+    }
+    .git-info .meta { color: #888; font-size: 0.85em; margin-top: 10px; }
+
+    /* Endpoints */
+    .endpoint-list { list-style: none; }
+    .endpoint-list li {
+      display: flex;
+      align-items: center;
+      padding: 12px 15px;
+      background: rgba(0,0,0,0.2);
+      margin-bottom: 8px;
+      border-radius: 8px;
+      transition: transform 0.2s;
+    }
+    .endpoint-list li:hover { transform: translateX(5px); background: rgba(0,102,204,0.2); }
+    .endpoint-list .method {
+      background: #4ade80;
+      color: #000;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.75em;
+      font-weight: bold;
+      margin-right: 15px;
+    }
+    .endpoint-list .path { font-family: monospace; color: #fff; }
+    .endpoint-list .desc { margin-left: auto; color: #888; font-size: 0.85em; }
+    .endpoint-list a { text-decoration: none; color: inherit; display: flex; align-items: center; width: 100%; }
+
+    /* Docs */
+    .doc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+    .doc-item {
+      background: rgba(0,0,0,0.2);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      transition: transform 0.2s, background 0.2s;
+      text-decoration: none;
+      color: #fff;
+    }
+    .doc-item:hover { transform: translateY(-5px); background: rgba(0,102,204,0.3); }
+    .doc-item .icon { font-size: 2em; margin-bottom: 10px; }
+    .doc-item .name { font-size: 0.9em; }
+
+    /* Architecture */
+    .architecture {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding: 20px;
+    }
+    .arch-box {
+      background: rgba(0,0,0,0.3);
+      padding: 20px 30px;
+      border-radius: 10px;
+      text-align: center;
+      border: 2px solid rgba(255,255,255,0.1);
+    }
+    .arch-box.highlight { border-color: #0066cc; background: rgba(0,102,204,0.2); }
+    .arch-box .icon { font-size: 1.5em; margin-bottom: 10px; }
+    .arch-arrow { color: #0066cc; font-size: 1.5em; }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 30px;
+      color: #666;
+      font-size: 0.9em;
+    }
+    .footer a { color: #0066cc; text-decoration: none; margin: 0 10px; }
+    .footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>${name}</h1>
+      <span class="version">v${version}</span>
+      <p class="description">${description || 'Laboratorio de CI/CD con GitHub Actions'}</p>
+    </div>
+
+    <div class="grid">
+      <!-- System Status -->
+      <div class="card">
+        <h2>Estado del Sistema</h2>
+        <div class="status-grid">
+          <div class="status-item">
+            <div class="value">UP</div>
+            <div class="label">Status</div>
+          </div>
+          <div class="status-item">
+            <div class="value">${formatUptime(uptimeSeconds)}</div>
+            <div class="label">Uptime</div>
+          </div>
+          <div class="status-item">
+            <div class="value">${formatBytes(memoryUsage.heapUsed)}</div>
+            <div class="label">Heap Used</div>
+          </div>
+          <div class="status-item">
+            <div class="value">${process.version}</div>
+            <div class="label">Node.js</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Git Info -->
+      <div class="card">
+        <h2>Ultimo Commit</h2>
+        <div class="git-info">
+          ${gitHtml}
+        </div>
+      </div>
+    </div>
+
+    <!-- Architecture -->
+    <div class="card" style="margin-bottom: 30px;">
+      <h2>Arquitectura</h2>
+      <div class="architecture">
+        <div class="arch-box">
+          <div class="icon">👨‍💻</div>
+          <div>Developer</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">
+          <div class="icon">📦</div>
+          <div>GitHub</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">
+          <div class="icon">⚙️</div>
+          <div>Actions</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box">
+          <div class="icon">🐳</div>
+          <div>Docker</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box highlight">
+          <div class="icon">🚀</div>
+          <div>Server</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- Endpoints -->
+      <div class="card">
+        <h2>API Endpoints</h2>
+        <ul class="endpoint-list">
+          <li><a href="/"><span class="method">GET</span><span class="path">/</span><span class="desc">Documentacion</span></a></li>
+          <li><a href="/dashboard"><span class="method">GET</span><span class="path">/dashboard</span><span class="desc">Este panel</span></a></li>
+          <li><a href="/health"><span class="method">GET</span><span class="path">/health</span><span class="desc">Health check</span></a></li>
+          <li><a href="/actuator"><span class="method">GET</span><span class="path">/actuator</span><span class="desc">Indice Actuator</span></a></li>
+          <li><a href="/actuator/health"><span class="method">GET</span><span class="path">/actuator/health</span><span class="desc">Estado detallado</span></a></li>
+          <li><a href="/actuator/info"><span class="method">GET</span><span class="path">/actuator/info</span><span class="desc">Info app + git</span></a></li>
+          <li><a href="/actuator/metrics"><span class="method">GET</span><span class="path">/actuator/metrics</span><span class="desc">Metricas</span></a></li>
+          <li><a href="/actuator/env"><span class="method">GET</span><span class="path">/actuator/env</span><span class="desc">Variables entorno</span></a></li>
+        </ul>
+      </div>
+
+      <!-- Documentation -->
+      <div class="card">
+        <h2>Documentacion</h2>
+        <div class="doc-grid">
+          ${docsHtml}
+          <a href="/dashboard" class="doc-item" style="border: 2px dashed rgba(255,255,255,0.2);">
+            <div class="icon">📊</div>
+            <div class="name">Dashboard</div>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>${name} v${version}</p>
+      <p>
+        <a href="/">Docs</a>
+        <a href="/actuator">Actuator</a>
+        <a href="/README">README</a>
+        <a href="/CONTRIBUTING">Contributing</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  res.type('html').send(html);
 });
 
 // ============================================
