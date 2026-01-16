@@ -354,24 +354,136 @@ Endpoints estilo Spring Boot Actuator para monitoreo y diagnostico:
 
 Variables de entorno con valores sensibles (password, token, key, secret, auth, etc.) filtrados automaticamente como `******`.
 
-## Workflows
+## CI/CD Centralizado
+
+Este proyecto utiliza **workflows reutilizables** centralizados en el repositorio [monghit-server/.github](https://github.com/monghit-server/.github). Esto permite:
+
+- Mantener la logica de CI/CD en un solo lugar
+- Actualizar todos los proyectos de la organizacion con un solo cambio
+- Reducir duplicacion de codigo (de ~380 lineas a ~80 lineas)
+- Estandarizar pipelines entre proyectos
+
+### Arquitectura CI/CD
+
+```mermaid
+graph TB
+    subgraph "Repositorio Central"
+        CENTRAL[monghit-server/.github]
+        WF_BUILD[docker-build.yml]
+        WF_DEPLOY[deploy.yml]
+        WF_VALIDATE[validate-pr.yml]
+        ACTION_NOTIFY[notify-telegram]
+    end
+
+    subgraph "test-deploy"
+        LOCAL_DEPLOY[deploy.yml]
+        LOCAL_VALIDATE[validate-version.yml]
+        LOCAL_ROLLBACK[rollback.yml]
+    end
+
+    LOCAL_DEPLOY -->|uses| WF_BUILD
+    LOCAL_DEPLOY -->|uses| WF_DEPLOY
+    LOCAL_VALIDATE -->|uses| WF_VALIDATE
+    LOCAL_ROLLBACK -->|uses| ACTION_NOTIFY
+
+    CENTRAL --> WF_BUILD
+    CENTRAL --> WF_DEPLOY
+    CENTRAL --> WF_VALIDATE
+    CENTRAL --> ACTION_NOTIFY
+```
+
+### Workflows Reutilizables
+
+| Workflow | Ubicacion | Descripcion |
+|----------|-----------|-------------|
+| `docker-build.yml` | `.github/workflows/` | Build y push de imagen Docker a ghcr.io |
+| `deploy.yml` | `.github/workflows/` | Deploy via SSH con health check |
+| `validate-pr.yml` | `.github/workflows/` | Validacion de PR con auto-bump de version |
+
+### Actions Reutilizables
+
+| Action | Ubicacion | Descripcion |
+|--------|-----------|-------------|
+| `notify-telegram` | `actions/` | Notificaciones a Telegram via n8n |
+| `docker-build` | `actions/` | Build de imagen con tags estandar |
+| `deploy-ssh` | `actions/` | Deploy via SSH |
+
+### Uso en este proyecto
+
+**deploy.yml** (68 lineas vs 188 originales):
+```yaml
+jobs:
+  build:
+    uses: monghit-server/.github/.github/workflows/docker-build.yml@main
+
+  deploy:
+    uses: monghit-server/.github/.github/workflows/deploy.yml@main
+    with:
+      app_name: test-deploy
+      health_url: https://test.monghit.com/health
+```
+
+**validate-version.yml** (12 lineas vs 102 originales):
+```yaml
+jobs:
+  validate:
+    uses: monghit-server/.github/.github/workflows/validate-pr.yml@main
+```
+
+### Agregar CI/CD a un nuevo proyecto
+
+1. Crear `.github/workflows/ci.yml`:
+```yaml
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    uses: monghit-server/.github/.github/workflows/validate-pr.yml@main
+
+  build:
+    if: github.event_name == 'push'
+    uses: monghit-server/.github/.github/workflows/docker-build.yml@main
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy:
+    if: github.event_name == 'push'
+    needs: build
+    uses: monghit-server/.github/.github/workflows/deploy.yml@main
+    with:
+      app_name: mi-app
+      app_path: /opt/apps/mi-app
+      health_url: https://mi-app.monghit.com/health
+    secrets:
+      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_USER: ${{ secrets.SERVER_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+2. Configurar secrets a nivel de organizacion o repositorio.
+
+## Workflows Locales
 
 ### Deploy (deploy.yml)
 
 Se ejecuta en push a main:
 
 1. **create-tag**: Crea tag automatico basado en `package.json`
-2. **build-and-push**: Construye y sube imagen a ghcr.io (exporta la version como output)
-3. **deploy**: Despliega en el servidor via SSH usando el tag de version especifico
-
-El deploy actualiza el `docker-compose.yml` en el servidor para usar el tag de version (ej: `:1.1.5`) en lugar de `:main`. Esto evita acumular imagenes sin tag (dangling) en el servidor.
-
-Cada job envia una notificacion a Telegram si falla.
+2. **build**: Usa workflow centralizado para build Docker
+3. **deploy**: Usa workflow centralizado para deploy SSH
 
 ```mermaid
 graph LR
     A[Push a main] --> B[create-tag]
-    B --> C[build-and-push]
+    B --> C[build]
     C --> D[deploy]
     D --> E[Health check]
     B -.->|fallo| T[Telegram]
@@ -388,16 +500,13 @@ Se ejecuta manualmente desde GitHub Actions:
 3. Cambia imagen en el servidor
 4. Verifica health check
 
-Envia notificacion a Telegram si falla cualquier paso.
-
 ### Validate Version (validate-version.yml)
 
-Se ejecuta en PRs a main:
+Se ejecuta en PRs a main usando el workflow centralizado:
 
 1. **check-version**: Valida que la version sea diferente y el tag no exista
-2. **security-audit**: Ejecuta `npm audit`
-
-Cada job envia notificacion a Telegram si falla.
+2. **auto-bump**: Incrementa version automaticamente si es igual a main
+3. **security-audit**: Ejecuta `npm audit`
 
 ## Imagenes Docker
 
