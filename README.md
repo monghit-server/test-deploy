@@ -4,6 +4,8 @@
 
 Este proyecto es un **laboratorio de aprendizaje** para implementar un pipeline de CI/CD completo usando GitHub Actions, Docker y despliegue automatizado en un servidor remoto.
 
+> **Contribuir al proyecto?** Consulta la [Guia de Contribucion](CONTRIBUTING.md) para conocer el flujo de trabajo con GitFlow.
+
 El objetivo fue construir desde cero un sistema que permita:
 - Desplegar automaticamente al hacer push a main
 - Versionar la aplicacion con tags de Git
@@ -280,6 +282,73 @@ test-deploy/
 |----------|--------|-----------|
 | `/` | GET | `{"mensaje": "Hola desde GitHub Actions", "timestamp": "..."}` |
 | `/health` | GET | `{"status": "ok", "app": "test-deploy", "version": "X.X.X"}` |
+| `/docs` | GET | Lista de documentos markdown disponibles (HTML) |
+| `/docs/:name` | GET | Documento markdown renderizado como HTML |
+
+### Actuator Endpoints
+
+Endpoints estilo Spring Boot Actuator para monitoreo y diagnostico:
+
+| Endpoint | Descripcion |
+|----------|-------------|
+| `/actuator` | Indice con links a todos los endpoints |
+| `/actuator/health` | Estado de salud (UP/DOWN) con componentes |
+| `/actuator/info` | Info de la app, git y build |
+| `/actuator/metrics` | Metricas del sistema (CPU, memoria, uptime) |
+| `/actuator/env` | Variables de entorno (sensibles filtradas) |
+
+#### /actuator/health
+
+```json
+{
+  "status": "UP",
+  "components": {
+    "diskSpace": { "status": "UP", "details": { "total": "31 GB", "free": "23 GB" } },
+    "memory": { "status": "UP", "details": { "used": "23%", "heap": "8 MB" } },
+    "process": { "status": "UP", "details": { "uptime": "5s", "pid": 1234 } }
+  }
+}
+```
+
+#### /actuator/info
+
+```json
+{
+  "app": { "name": "test-deploy", "version": "1.1.5" },
+  "git": {
+    "commit": { "hash": "abc123...", "message": "feat: ...", "author": {...} },
+    "branch": "main"
+  },
+  "build": { "time": "2026-01-16T...", "nodeVersion": "v24.x.x" }
+}
+```
+
+#### /actuator/metrics
+
+```json
+{
+  "measurements": {
+    "process.uptime": { "value": 123, "unit": "seconds" },
+    "system.cpu.count": { "value": 12, "unit": "cores" },
+    "system.cpu.load": { "value": [1.5, 1.2, 0.9], "unit": "average" },
+    "process.memory.heap.used": { "value": 8748160, "formatted": "8.34 MB" },
+    "system.memory.total": { "formatted": "31.04 GB" },
+    "system.memory.free": { "formatted": "23.64 GB" }
+  }
+}
+```
+
+#### /actuator/env
+
+Variables de entorno con valores sensibles (password, token, key, etc.) filtrados automaticamente.
+
+### Documentacion /docs
+
+Permite visualizar los archivos markdown del proyecto directamente en el navegador:
+
+- `/docs` - Lista todos los archivos `.md` disponibles
+- `/docs/README` - Renderiza `README.md` como HTML
+- `/docs/CONTRIBUTING` - Renderiza `CONTRIBUTING.md` como HTML
 
 ## Workflows
 
