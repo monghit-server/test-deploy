@@ -337,6 +337,15 @@ app.get('/actuator/env', (req, res) => {
 // DOCUMENTACION - Renderizar markdown en raiz
 // ============================================
 
+// Post-procesar HTML para convertir bloques mermaid en divs renderizables
+function processMermaidBlocks(html) {
+  // Reemplazar <pre><code class="language-mermaid">...</code></pre> por <div class="mermaid">...</div>
+  return html.replace(
+    /<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/pre>/g,
+    (match, code) => `<div class="mermaid">${code.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')}</div>`
+  );
+}
+
 // Renderizar documento markdown (debe ir al final para no conflictuar)
 app.get('/:docName', (req, res, next) => {
   const docName = req.params.docName;
@@ -348,7 +357,7 @@ app.get('/:docName', (req, res, next) => {
   }
 
   const content = fs.readFileSync(filePath, 'utf8');
-  const htmlContent = marked(content);
+  const htmlContent = processMermaidBlocks(marked(content));
 
   const html = `
 <!DOCTYPE html>
@@ -373,6 +382,7 @@ app.get('/:docName', (req, res, next) => {
     .nav { margin-bottom: 20px; padding: 10px 0; border-bottom: 1px solid #eee; }
     .nav a { margin-right: 15px; text-decoration: none; }
     .nav a:hover { text-decoration: underline; }
+    .mermaid { background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
   </style>
 </head>
 <body>
@@ -382,6 +392,8 @@ app.get('/:docName', (req, res, next) => {
     <a href="/actuator/health">Health</a>
   </nav>
   ${htmlContent}
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'default' });</script>
 </body>
 </html>`;
 
