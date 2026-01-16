@@ -45,6 +45,9 @@ jobs:
   # Build usando workflow centralizado
   build:
     needs: create-tag
+    permissions:
+      contents: read
+      packages: write
     uses: monghit-server/.github/.github/workflows/docker-build.yml@main
     with:
       image_name: ${{ github.repository }}
