@@ -4,203 +4,65 @@ on:
   push:
     branches:
       - main
-    tags:
-      - 'v*'
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  # Crear tag de version
   create-tag:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     permissions:
       contents: write
     outputs:
-      version: ${{ steps.get_version.outputs.version }}
-      tag_created: ${{ steps.create_tag.outputs.created }}
+      version: ${{ steps.version.outputs.version }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
 
-      - name: Get version from package.json
-        id: get_version
+      - name: Get version
+        id: version
         run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
-      - name: Check if tag exists
-        id: check_tag
+      - name: Create tag if not exists
         run: |
-          if git rev-parse "v${{ steps.get_version.outputs.version }}" >/dev/null 2>&1; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
+          if ! git rev-parse "v${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
+            git config user.name "github-actions"
+            git config user.email "github-actions@github.com"
+            git tag -a "v${{ steps.version.outputs.version }}" -m "Version ${{ steps.version.outputs.version }}"
+            git push origin "v${{ steps.version.outputs.version }}"
           fi
 
-      - name: Create tag
-        id: create_tag
-        if: steps.check_tag.outputs.exists == 'false'
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git tag -a "v${{ steps.get_version.outputs.version }}" -m "Version ${{ steps.get_version.outputs.version }}"
-          git push origin "v${{ steps.get_version.outputs.version }}"
-          echo "created=true" >> $GITHUB_OUTPUT
-
-      - name: Notify Telegram on failure
+      - name: Notify on failure
         if: failure()
-        uses: ./.github/actions/notify-telegram
+        uses: monghit-server/.github/actions/notify-telegram@main
         with:
           webhook_url: ${{ secrets.N8N_WEBHOOK_TO_TELEGRAM_URL }}
           event: create_tag_failed
           repository: ${{ github.repository }}
           actor: ${{ github.actor }}
           run_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          version: ${{ steps.get_version.outputs.version }}
+          version: ${{ steps.version.outputs.version }}
 
-  build-and-push:
-    runs-on: ubuntu-latest
+  # Build usando workflow centralizado
+  build:
     needs: create-tag
-    if: always() && !failure() && !cancelled()
-    permissions:
-      contents: read
-      packages: write
-      security-events: write
-    outputs:
-      version: ${{ steps.pkg_version.outputs.version }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4.1.1
+    uses: monghit-server/.github/.github/workflows/docker-build.yml@main
+    with:
+      image_name: ${{ github.repository }}
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get version from package.json
-        id: pkg_version
-        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
-
-      - name: Generate git-info.json
-        run: |
-          cat > git-info.json << EOF
-          {
-            "commit": {
-              "hash": "${{ github.sha }}",
-              "shortHash": "$(echo ${{ github.sha }} | cut -c1-7)",
-              "message": $(git log -1 --pretty=format:'"%s"'),
-              "author": {
-                "name": "$(git log -1 --pretty=format:'%an')",
-                "email": "$(git log -1 --pretty=format:'%ae')"
-              },
-              "date": "$(git log -1 --pretty=format:'%ci')"
-            },
-            "branch": "${{ github.ref_name }}"
-          }
-          EOF
-          cat git-info.json
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3.1.0
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push image
-        uses: docker/build-push-action@v5.3.0
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.pkg_version.outputs.version }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@0.18.0
-        with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.pkg_version.outputs.version }}
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH'
-
-      - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
-
-      - name: Notify Telegram on failure
-        if: failure()
-        uses: ./.github/actions/notify-telegram
-        with:
-          webhook_url: ${{ secrets.N8N_WEBHOOK_TO_TELEGRAM_URL }}
-          event: build_failed
-          repository: ${{ github.repository }}
-          actor: ${{ github.actor }}
-          run_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          version: ${{ steps.pkg_version.outputs.version }}
-
+  # Deploy usando workflow centralizado
   deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4.1.1
-
-      - name: Deploy to server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd /opt/apps
-            if [ ! -d "test-deploy" ]; then
-              git clone https://github.com/monghit-server/test-deploy.git
-            fi
-            cd test-deploy
-            git fetch --all --tags
-            git checkout -- docker-compose.yml
-            git checkout main
-            git pull
-
-            echo "📋 Actualizando imagen a versión ${{ needs.build-and-push.outputs.version }}..."
-            sed -i 's|image: ghcr.io/monghit-server/test-deploy:.*|image: ghcr.io/monghit-server/test-deploy:${{ needs.build-and-push.outputs.version }}|' docker-compose.yml
-
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker compose pull
-            docker compose up -d
-
-            echo "⏳ Esperando que el contenedor arranque..."
-            sleep 5
-
-            echo "📋 Estado del contenedor:"
-            docker compose ps
-
-            echo "⏳ Verificando health check..."
-            for i in 1 2 3 4 5 6 7 8 9 10; do
-              if curl -sf https://test.monghit.com/health > /dev/null 2>&1; then
-                echo "✅ Deploy exitoso"
-                curl -s https://test.monghit.com/health
-                exit 0
-              fi
-              echo "Intento $i/10 fallido, reintentando..."
-              sleep 3
-            done
-
-            echo "❌ Error: Health check falló después de 10 intentos"
-            echo "📋 Logs del contenedor:"
-            docker compose logs --tail=50
-            exit 1
-
-      - name: Notify Telegram on failure
-        if: failure()
-        uses: ./.github/actions/notify-telegram
-        with:
-          webhook_url: ${{ secrets.N8N_WEBHOOK_TO_TELEGRAM_URL }}
-          event: deploy_failed
-          repository: ${{ github.repository }}
-          actor: ${{ github.actor }}
-          run_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          branch: ${{ github.ref_name }}
-          commit: ${{ github.sha }}
+    needs: [create-tag, build]
+    uses: monghit-server/.github/.github/workflows/deploy.yml@main
+    with:
+      app_name: test-deploy
+      app_path: /opt/apps/test-deploy
+      health_url: https://test.monghit.com/health
+      version: ${{ needs.create-tag.outputs.version }}
+    secrets:
+      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_USER: ${{ secrets.SERVER_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      N8N_WEBHOOK_TO_TELEGRAM_URL: ${{ secrets.N8N_WEBHOOK_TO_TELEGRAM_URL }}
