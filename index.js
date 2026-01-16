@@ -47,7 +47,7 @@ function getMarkdownFiles() {
     .filter(file => file.endsWith('.md'))
     .map(file => ({
       name: file,
-      path: `/docs/${file.replace('.md', '')}`
+      path: `/${file.replace('.md', '')}`
     }));
 }
 
@@ -95,11 +95,45 @@ function filterEnv(env) {
 // ENDPOINTS PRINCIPALES
 // ============================================
 
+// Raiz - Lista de documentos markdown
 app.get('/', (req, res) => {
-  res.json({
-    mensaje: 'Hola desde GitHub Actions',
-    timestamp: new Date().toISOString()
-  });
+  const files = getMarkdownFiles();
+
+  const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${name} - Documentacion</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+    h1 { color: #333; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    .doc-list { list-style: none; padding: 0; }
+    .doc-list li { margin: 10px 0; }
+    .doc-list a { display: block; padding: 15px 20px; background: white; border-radius: 8px; text-decoration: none; color: #0066cc; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s; }
+    .doc-list a:hover { transform: translateX(5px); background: #f0f7ff; }
+    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
+    .footer a { color: #0066cc; margin-right: 15px; }
+  </style>
+</head>
+<body>
+  <h1>${name}</h1>
+  <p>${description || ''}</p>
+  <h2>Documentacion</h2>
+  <ul class="doc-list">
+    ${files.map(f => `<li><a href="${f.path}">${f.name}</a></li>`).join('\n    ')}
+  </ul>
+  <div class="footer">
+    <p>v${version}</p>
+    <a href="/actuator">Actuator</a>
+    <a href="/actuator/health">Health</a>
+    <a href="/actuator/info">Info</a>
+  </div>
+</body>
+</html>`;
+
+  res.type('html').send(html);
 });
 
 // ============================================
@@ -300,55 +334,30 @@ app.get('/actuator/env', (req, res) => {
 });
 
 // ============================================
-// DOCUMENTACION ENDPOINTS
+// DOCUMENTACION - Renderizar markdown en raiz
 // ============================================
 
-// Listar documentos markdown disponibles
-app.get('/docs', (req, res) => {
-  const files = getMarkdownFiles();
+// Post-procesar HTML para convertir bloques mermaid en divs renderizables
+function processMermaidBlocks(html) {
+  // Reemplazar <pre><code class="language-mermaid">...</code></pre> por <div class="mermaid">...</div>
+  return html.replace(
+    /<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/pre>/g,
+    (match, code) => `<div class="mermaid">${code.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')}</div>`
+  );
+}
 
-  const html = `
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Documentacion - ${name}</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
-    h1 { color: #333; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
-    .doc-list { list-style: none; padding: 0; }
-    .doc-list li { margin: 10px 0; }
-    .doc-list a { display: block; padding: 15px 20px; background: white; border-radius: 8px; text-decoration: none; color: #0066cc; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s; }
-    .doc-list a:hover { transform: translateX(5px); background: #f0f7ff; }
-    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
-  </style>
-</head>
-<body>
-  <h1>Documentacion</h1>
-  <ul class="doc-list">
-    ${files.map(f => `<li><a href="${f.path}">${f.name}</a></li>`).join('\n    ')}
-  </ul>
-  <div class="footer">
-    <p>${name} v${version} | <a href="/actuator">Actuator</a></p>
-  </div>
-</body>
-</html>`;
-
-  res.type('html').send(html);
-});
-
-// Renderizar documento markdown especifico
-app.get('/docs/:docName', (req, res) => {
+// Renderizar documento markdown (debe ir al final para no conflictuar)
+app.get('/:docName', (req, res, next) => {
   const docName = req.params.docName;
   const filePath = path.join(process.cwd(), `${docName}.md`);
 
+  // Si no existe el archivo .md, pasar al siguiente handler (404)
   if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: 'Document not found', document: docName });
+    return next();
   }
 
   const content = fs.readFileSync(filePath, 'utf8');
-  const htmlContent = marked(content);
+  const htmlContent = processMermaidBlocks(marked(content));
 
   const html = `
 <!DOCTYPE html>
@@ -373,16 +382,18 @@ app.get('/docs/:docName', (req, res) => {
     .nav { margin-bottom: 20px; padding: 10px 0; border-bottom: 1px solid #eee; }
     .nav a { margin-right: 15px; text-decoration: none; }
     .nav a:hover { text-decoration: underline; }
+    .mermaid { background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
   </style>
 </head>
 <body>
   <nav class="nav">
-    <a href="/docs">Documentacion</a>
     <a href="/">Inicio</a>
     <a href="/actuator">Actuator</a>
     <a href="/actuator/health">Health</a>
   </nav>
   ${htmlContent}
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'default' });</script>
 </body>
 </html>`;
 

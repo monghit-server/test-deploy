@@ -267,23 +267,35 @@ test-deploy/
 │   └── workflows/
 │       ├── deploy.yml           # Deploy automatico en push a main
 │       ├── rollback.yml         # Rollback manual a version especifica
-│       └── validate-version.yml # Validacion de version en PRs
+│       └── validate-version.yml # Validacion y auto-bump de version en PRs
 ├── .dockerignore                # Excluir node_modules y .git
 ├── Dockerfile                   # Imagen Node.js Alpine con usuario no-root
 ├── docker-compose.yml           # Configuracion con labels de Traefik
-├── index.js                     # Servidor Express con endpoints / y /health
+├── index.js                     # Servidor Express con Actuator y docs
 ├── package.json                 # Metadata y version de la app
+├── CONTRIBUTING.md              # Guia de contribucion con GitFlow
 └── README.md
 ```
 
 ## Endpoints
 
-| Endpoint | Metodo | Respuesta |
-|----------|--------|-----------|
-| `/` | GET | `{"mensaje": "Hola desde GitHub Actions", "timestamp": "..."}` |
-| `/health` | GET | `{"status": "ok", "app": "test-deploy", "version": "X.X.X"}` |
-| `/docs` | GET | Lista de documentos markdown disponibles (HTML) |
-| `/docs/:name` | GET | Documento markdown renderizado como HTML |
+### Documentacion (raiz)
+
+La aplicacion sirve documentacion markdown renderizada como HTML con soporte para diagramas Mermaid:
+
+| Endpoint | Descripcion |
+|----------|-------------|
+| `/` | Pagina principal con lista de documentos |
+| `/README` | README.md renderizado como HTML |
+| `/CONTRIBUTING` | CONTRIBUTING.md renderizado como HTML |
+
+Los diagramas Mermaid se renderizan automaticamente usando [Mermaid.js](https://mermaid.js.org/).
+
+### Health Check
+
+| Endpoint | Descripcion |
+|----------|-------------|
+| `/health` | Health check simple: `{"status": "ok", "app": "...", "version": "..."}` |
 
 ### Actuator Endpoints
 
@@ -291,9 +303,9 @@ Endpoints estilo Spring Boot Actuator para monitoreo y diagnostico:
 
 | Endpoint | Descripcion |
 |----------|-------------|
-| `/actuator` | Indice con links a todos los endpoints |
+| `/actuator` | Indice HAL-style con links a todos los endpoints |
 | `/actuator/health` | Estado de salud (UP/DOWN) con componentes |
-| `/actuator/info` | Info de la app, git y build |
+| `/actuator/info` | Info de la app, git commit y build |
 | `/actuator/metrics` | Metricas del sistema (CPU, memoria, uptime) |
 | `/actuator/env` | Variables de entorno (sensibles filtradas) |
 
@@ -314,7 +326,7 @@ Endpoints estilo Spring Boot Actuator para monitoreo y diagnostico:
 
 ```json
 {
-  "app": { "name": "test-deploy", "version": "1.1.5" },
+  "app": { "name": "test-deploy", "version": "1.1.6" },
   "git": {
     "commit": { "hash": "abc123...", "message": "feat: ...", "author": {...} },
     "branch": "main"
@@ -340,15 +352,7 @@ Endpoints estilo Spring Boot Actuator para monitoreo y diagnostico:
 
 #### /actuator/env
 
-Variables de entorno con valores sensibles (password, token, key, etc.) filtrados automaticamente.
-
-### Documentacion /docs
-
-Permite visualizar los archivos markdown del proyecto directamente en el navegador:
-
-- `/docs` - Lista todos los archivos `.md` disponibles
-- `/docs/README` - Renderiza `README.md` como HTML
-- `/docs/CONTRIBUTING` - Renderiza `CONTRIBUTING.md` como HTML
+Variables de entorno con valores sensibles (password, token, key, secret, auth, etc.) filtrados automaticamente como `******`.
 
 ## Workflows
 
