@@ -261,9 +261,6 @@ docker compose ps  # Solo informativo
 ```
 test-deploy/
 ├── .github/
-│   ├── actions/
-│   │   └── notify-telegram/
-│   │       └── action.yml       # Composite action para notificaciones
 │   └── workflows/
 │       ├── deploy.yml           # Deploy automatico en push a main
 │       ├── rollback.yml         # Rollback manual a version especifica
@@ -449,9 +446,10 @@ jobs:
 
   build:
     if: github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
     uses: monghit-server/.github/.github/workflows/docker-build.yml@main
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   deploy:
     if: github.event_name == 'push'
@@ -465,7 +463,6 @@ jobs:
       SERVER_HOST: ${{ secrets.SERVER_HOST }}
       SERVER_USER: ${{ secrets.SERVER_USER }}
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 2. Configurar secrets a nivel de organizacion o repositorio.
@@ -575,19 +572,19 @@ git push origin main
 
 Las notificaciones se envian a un webhook de n8n que las redirige a Telegram. Se activan cuando falla cualquier paso de los workflows.
 
-### Composite Action
+### Composite Action Centralizada
 
-Las notificaciones estan centralizadas en una **Composite Action** reutilizable ubicada en `.github/actions/notify-telegram/`. Esto permite:
+Las notificaciones estan centralizadas en una **Composite Action** reutilizable ubicada en el repositorio central `monghit-server/.github/actions/notify-telegram/`. Esto permite:
 
-- Mantener la logica de notificacion en un solo lugar
-- Reutilizar el mismo codigo en todos los workflows
-- Facilitar cambios futuros (solo se modifica un archivo)
+- Mantener la logica de notificacion en un solo lugar para toda la organizacion
+- Reutilizar el mismo codigo en todos los proyectos
+- Facilitar cambios futuros (solo se modifica un archivo en el repo central)
 
 **Uso en workflows:**
 ```yaml
 - name: Notify Telegram on failure
   if: failure()
-  uses: ./.github/actions/notify-telegram
+  uses: monghit-server/.github/actions/notify-telegram@main
   with:
     webhook_url: ${{ secrets.N8N_WEBHOOK_TO_TELEGRAM_URL }}
     event: deploy_failed
