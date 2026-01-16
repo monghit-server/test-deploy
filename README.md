@@ -4,6 +4,8 @@
 
 Este proyecto es un **laboratorio de aprendizaje** para implementar un pipeline de CI/CD completo usando GitHub Actions, Docker y despliegue automatizado en un servidor remoto.
 
+> **Contribuir al proyecto?** Consulta la [Guia de Contribucion](CONTRIBUTING.md) para conocer el flujo de trabajo con GitFlow.
+
 El objetivo fue construir desde cero un sistema que permita:
 - Desplegar automaticamente al hacer push a main
 - Versionar la aplicacion con tags de Git
