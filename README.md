@@ -288,6 +288,16 @@ La aplicacion sirve documentacion markdown renderizada como HTML con soporte par
 
 Los diagramas Mermaid se renderizan automaticamente usando [Mermaid.js](https://mermaid.js.org/).
 
+### Infografias
+
+Versiones visuales e interactivas de la documentacion:
+
+| Endpoint | Descripcion |
+|----------|-------------|
+| `/infografia/` | Indice de infografias |
+| `/infografia/README.html` | Infografia del README |
+| `/infografia/CONTRIBUTING.html` | Infografia de CONTRIBUTING |
+
 ### Health Check
 
 | Endpoint | Descripcion |
