@@ -688,6 +688,20 @@ Para usar diferentes usuarios de Git por carpeta:
 | **Registry** | GitHub Container Registry (ghcr.io) |
 | **Seguridad** | Trivy, npm audit |
 
+## Infografias
+
+Disponibles versiones visuales e interactivas de la documentacion:
+
+- [Indice de infografias](infografia/index.html)
+- [Infografia: Test Deploy](infografia/README.html)
+- [Infografia: Guia de Contribucion](infografia/CONTRIBUTING.html)
+
+---
+
+## Infografia
+
+> Ver la [version visual de este documento](infografia/README.html) para un resumen interactivo.
+
 ## Licencia
 
 MIT

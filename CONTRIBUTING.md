@@ -185,3 +185,9 @@ graph LR
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Infografia
+
+> Ver la [version visual de este documento](infografia/CONTRIBUTING.html) para un resumen interactivo.
