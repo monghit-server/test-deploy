@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Deploy - Infografia</title>
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-card: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-purple: #8b5cf6;
+            --accent-red: #ef4444;
+            --border-color: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --radius: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            color: white;
+            padding: 3rem 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .breadcrumb {
+            font-size: 0.875rem;
+            opacity: 0.8;
+            margin-bottom: 1rem;
+        }
+
+        .breadcrumb a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            font-size: 1.125rem;
+            opacity: 0.9;
+        }
+
+        /* Hero section */
+        .hero {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--accent-blue);
+        }
+
+        .hero h2 {
+            color: var(--accent-blue);
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .hero p {
+            color: var(--text-secondary);
+            font-size: 1.125rem;
+        }
+
+        /* Cards grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-icon.blue { background: #dbeafe; color: var(--accent-blue); }
+        .card-icon.green { background: #d1fae5; color: var(--accent-green); }
+        .card-icon.orange { background: #fef3c7; color: var(--accent-orange); }
+        .card-icon.purple { background: #ede9fe; color: var(--accent-purple); }
+
+        .card h3 {
+            font-size: 1.125rem;
+            color: var(--text-primary);
+        }
+
+        .card ul {
+            list-style: none;
+            margin-top: 0.75rem;
+        }
+
+        .card li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .card li:last-child {
+            border-bottom: none;
+        }
+
+        .card li::before {
+            content: "•";
+            color: var(--accent-blue);
+            font-weight: bold;
+        }
+
+        /* Section */
+        .section {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section h2 .icon {
+            width: 32px;
+            height: 32px;
+        }
+
+        /* Diagrams */
+        .diagram-container {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        td {
+            color: var(--text-secondary);
+        }
+
+        /* Code blocks */
+        code {
+            background: #f1f5f9;
+            padding: 0.125rem 0.375rem;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.875em;
+            color: var(--accent-purple);
+        }
+
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            gap: 0.375rem;
+        }
+
+        .badge.blue { background: #dbeafe; color: #1d4ed8; }
+        .badge.green { background: #d1fae5; color: #047857; }
+        .badge.orange { background: #fef3c7; color: #b45309; }
+        .badge.purple { background: #ede9fe; color: #6d28d9; }
+
+        /* Stats grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Tips */
+        .tip {
+            background: #f0fdf4;
+            border-left: 4px solid var(--accent-green);
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+        }
+
+        .warning {
+            background: #fefce8;
+            border-left: 4px solid var(--accent-orange);
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+        }
+
+        /* Problems list */
+        .problems-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .problem {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .problem-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .problem-number {
+            background: var(--accent-blue);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+        }
+
+        /* Navigation */
+        .nav-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--accent-blue);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .nav-link:hover {
+            background: #dbeafe;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        footer a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            h1 {
+                font-size: 1.75rem;
+            }
+
+            .hero {
+                padding: 1.5rem;
+            }
+
+            .section {
+                padding: 1.5rem;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="breadcrumb">
+                <a href="index.html">Infografias</a> / README
+            </div>
+            <h1>Test Deploy</h1>
+            <p class="subtitle">Laboratorio de CI/CD con GitHub Actions, Docker y despliegue automatizado</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Hero -->
+        <div class="hero">
+            <h2>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 16v-4M12 8h.01"/>
+                </svg>
+                Resumen Ejecutivo
+            </h2>
+            <p>
+                Este proyecto implementa un pipeline de CI/CD completo que permite desplegar automaticamente al hacer push a main,
+                versionar con tags de Git, realizar rollbacks y recibir notificaciones en Telegram.
+                Construido con GitHub Actions, Docker y Traefik como reverse proxy.
+            </p>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat">
+                <div class="stat-value">8</div>
+                <div class="stat-label">Problemas Resueltos</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Workflows</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">5</div>
+                <div class="stat-label">Endpoints Actuator</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">6</div>
+                <div class="stat-label">Eventos Notificados</div>
+            </div>
+        </div>
+
+        <!-- Que se aprendio -->
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon blue">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                    </div>
+                    <h3>CI/CD con GitHub Actions</h3>
+                </div>
+                <ul>
+                    <li>Workflows con push, tags y PRs</li>
+                    <li>Ejecucion manual con workflow_dispatch</li>
+                    <li>Jobs encadenados con needs</li>
+                    <li>Composite Actions reutilizables</li>
+                    <li>Notificaciones a Telegram</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon green">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="2" width="20" height="20" rx="2"/>
+                            <path d="M7 10h10M7 14h10"/>
+                        </svg>
+                    </div>
+                    <h3>Docker & Registry</h3>
+                </div>
+                <ul>
+                    <li>Imagenes optimizadas (Alpine)</li>
+                    <li>GitHub Container Registry</li>
+                    <li>Multiple tags por imagen</li>
+                    <li>Contenedor no-root</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon orange">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                        </svg>
+                    </div>
+                    <h3>Git & Versionado</h3>
+                </div>
+                <ul>
+                    <li>Tags automaticos desde workflows</li>
+                    <li>Branch protection rules</li>
+                    <li>Validacion de versiones</li>
+                    <li>Config Git por carpeta</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon purple">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                        </svg>
+                    </div>
+                    <h3>Deploy & Operaciones</h3>
+                </div>
+                <ul>
+                    <li>Deploy via SSH</li>
+                    <li>Traefik como reverse proxy</li>
+                    <li>Health checks automaticos</li>
+                    <li>Rollback a versiones anteriores</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Arquitectura -->
+        <div class="section">
+            <h2>
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <path d="M3 9h18M9 21V9"/>
+                </svg>
+                Arquitectura
+            </h2>
+            <div class="diagram-container">
+                <pre class="mermaid">
+graph TB
+    subgraph "GitHub"
+        REPO[Repositorio]
+        ACTIONS[GitHub Actions]
+        GHCR[Container Registry]
+    end
+
+    subgraph "Servidor"
+        TRAEFIK[Traefik]
+        DOCKER[Docker Compose]
+        APP[App Node.js]
+    end
+
+    REPO -->|push a main| ACTIONS
+    ACTIONS -->|build & push| GHCR
+    ACTIONS -->|SSH deploy| DOCKER
+    GHCR -->|pull image| DOCKER
+    DOCKER --> APP
+    TRAEFIK -->|proxy| APP
+
+    INTERNET[Internet] -->|HTTPS| TRAEFIK
+                </pre>
+            </div>
+        </div>
+
+        <!-- Flujo de Deploy -->
+        <div class="section">
+            <h2>
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="var(--accent-green)" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+                Flujo de Deploy
+            </h2>
+            <div class="diagram-container">
+                <pre class="mermaid">
+sequenceDiagram
+    participant DEV as Developer
+    participant GH as GitHub
+    participant GA as GitHub Actions
+    participant GHCR as Container Registry
+    participant SRV as Servidor
+
+    DEV->>GH: Push a main
+    GH->>GA: Trigger workflow
+    GA->>GA: Crear tag automatico
+    GA->>GA: Build imagen Docker
+    GA->>GHCR: Push imagen
+    GA->>SRV: SSH conexion
+    SRV->>GHCR: docker compose pull
+    SRV->>SRV: docker compose up
+    SRV->>SRV: Health check
+    GA-->>DEV: Deploy exitoso/fallido
+                </pre>
+            </div>
+        </div>
+
+        <!-- Endpoints -->
+        <div class="section">
+            <h2>
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="var(--accent-orange)" stroke-width="2">
+                    <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.66 0 3-4.03 3-9s-1.34-9-3-9m0 18c-1.66 0-3-4.03-3-9s1.34-9 3-9"/>
+                </svg>
+                Endpoints
+            </h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Endpoint</th>
+                            <th>Descripcion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>/</code></td>
+                            <td>Pagina principal con lista de documentos</td>
+                        </tr>
+                        <tr>
+                            <td><code>/health</code></td>
+                            <td>Health check: status, app, version</td>
+                        </tr>
+                        <tr>
+                            <td><code>/actuator</code></td>
+                            <td>Indice HAL-style con links a todos los endpoints</td>
+                        </tr>
+                        <tr>
+                            <td><code>/actuator/health</code></td>
+                            <td>Estado de salud con componentes</td>
+                        </tr>
+                        <tr>
+                            <td><code>/actuator/info</code></td>
+                            <td>Info de app, git commit y build</td>
+                        </tr>
+                        <tr>
+                            <td><code>/actuator/metrics</code></td>
+                            <td>Metricas del sistema (CPU, memoria, uptime)</td>
+                        </tr>
+                        <tr>
+                            <td><code>/actuator/env</code></td>
+                            <td>Variables de entorno (sensibles filtradas)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Seguridad -->
+        <div class="section">
+            <h2>
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="var(--accent-purple)" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                Seguridad
+            </h2>
+            <div class="cards-grid" style="margin-top: 1rem;">
+                <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f8fafc; border-radius: 8px;">
+                    <span class="badge green">npm audit</span>
+                    <span style="font-size: 0.875rem; color: var(--text-secondary);">Escaneo de vulnerabilidades</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f8fafc; border-radius: 8px;">
+                    <span class="badge blue">Trivy</span>
+                    <span style="font-size: 0.875rem; color: var(--text-secondary);">Escaneo de imagen Docker</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f8fafc; border-radius: 8px;">
+                    <span class="badge purple">no-root</span>
+                    <span style="font-size: 0.875rem; color: var(--text-secondary);">Usuario nodejs (UID 1001)</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f8fafc; border-radius: 8px;">
+                    <span class="badge orange">Versiones fijadas</span>
+                    <span style="font-size: 0.875rem; color: var(--text-secondary);">Sin @latest en Actions</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tecnologias -->
+        <div class="section">
+            <h2>
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" stroke-width="2">
+                    <polyline points="16 18 22 12 16 6"/>
+                    <polyline points="8 6 2 12 8 18"/>
+                </svg>
+                Tecnologias
+            </h2>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem;">
+                <span class="badge blue">Node.js 20</span>
+                <span class="badge green">Express</span>
+                <span class="badge blue">Docker</span>
+                <span class="badge purple">Traefik v3</span>
+                <span class="badge orange">GitHub Actions</span>
+                <span class="badge green">ghcr.io</span>
+                <span class="badge purple">Trivy</span>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="nav-footer">
+            <a href="index.html" class="nav-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Volver al indice
+            </a>
+            <a href="CONTRIBUTING.html" class="nav-link">
+                Siguiente: CONTRIBUTING
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+            </a>
+        </nav>
+    </div>
+
+    <footer>
+        <p>
+            Ver el <a href="../README.md">documento original</a> para mas detalles.
+        </p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'neutral',
+            flowchart: { curve: 'basis' }
+        });
+    </script>
+</body>
+</html>
