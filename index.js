@@ -123,10 +123,13 @@ app.get('/', (req, res) => {
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
     h1 { color: #333; border-bottom: 2px solid #0066cc; padding-bottom: 10px; }
+    h2 { color: #444; margin-top: 30px; }
     .doc-list { list-style: none; padding: 0; }
     .doc-list li { margin: 10px 0; }
     .doc-list a { display: block; padding: 15px 20px; background: white; border-radius: 8px; text-decoration: none; color: #0066cc; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s; }
     .doc-list a:hover { transform: translateX(5px); background: #f0f7ff; }
+    .doc-list a.infografia { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .doc-list a.infografia:hover { background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%); }
     .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 0.9em; }
     .footer a { color: #0066cc; margin-right: 15px; }
   </style>
@@ -137,6 +140,11 @@ app.get('/', (req, res) => {
   <h2>Documentacion</h2>
   <ul class="doc-list">
     ${files.map(f => `<li><a href="${f.path}">${f.name}</a></li>`).join('\n    ')}
+  </ul>
+  <h2>Infografias</h2>
+  <ul class="doc-list">
+    <li><a href="/infografia/" class="infografia">Indice de Infografias</a></li>
+    ${files.map(f => `<li><a href="/infografia/${f.name.replace('.md', '.html')}" class="infografia">${f.name.replace('.md', '')} - Version Visual</a></li>`).join('\n    ')}
   </ul>
   <div class="footer">
     <p>v${version}</p>
